@@ -1,6 +1,14 @@
 """PubPartner — persistent character cartridges for consistent AI personas."""
 
 from .cartridge import Cartridge, CartridgeValidationError, init_cartridge, load_cartridge
+from .companion_mode import (
+    AnimationLevel,
+    AvatarTier,
+    CapabilitySet,
+    CompanionMode,
+    resolve_capabilities,
+)
+from .link import LinkSession, PeerPresence
 from .memory_store import MEMORY_TYPES, Memory, MemoryStore, MemoryStoreError, ScoredMemory
 from .portable_runtime import PortableRuntime, PortableRuntimeError, TurnResult
 from .prompt_assembler import AssembledPrompt, assemble_prompt
@@ -39,4 +47,11 @@ __all__ = [
     "SequenceController",
     "TurnDecision",
     "score_captured_memory",
+    "AnimationLevel",
+    "AvatarTier",
+    "CapabilitySet",
+    "CompanionMode",
+    "resolve_capabilities",
+    "LinkSession",
+    "PeerPresence",
 ]
