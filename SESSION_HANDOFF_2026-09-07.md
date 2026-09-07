@@ -149,18 +149,22 @@ be real-but-undiscovered. Specifics:
   didn't exist anywhere — it doesn't exist *in this repo*, but does
   elsewhere (see below).
 
-### The-Counter-and-2i — mostly unpacked-zip prototypes, backend exists
+### The-Counter-and-2i — UI exists; integration proven in reference snapshot
 - `2i_writers_room_v3.html` (in a zip) is a **working UI** for almost
   exactly the "collaborative writing, 1.5 pages then review" feature:
   locked manuscript, active buffer capped at ~450 words (~1-2 pages),
   auto-graduation when the cap is hit, manual Approve button, per-line
-  pinning, chapter markers, full save/restore to `.2i` JSON files. **Chat
-  is an echo-stub — not wired to any real AI model.**
-  - **CRITICAL CONNECTION:** This UI's chat backend is
-    `Pubcaast-Breaking-Dawn/WORKING_PROGRAM/2i-backend` (16/16 tests pass,
-    verified live). This is NOT a rebuild task — it's a thin adapter wiring
-    the existing UI to the existing backend. Both pieces are real; they need
-    to be connected.
+  pinning, chapter markers, full save/restore to `.2i` JSON files.
+  - **INTEGRATION ALREADY PROVEN:** User provided reference snapshot
+    `PubCast_2i_PubPartner_WORKING_20260816.zip` — a complete verified
+    build from August 16 — that demonstrates real end-to-end integration:
+    60 integration tests pass, 2i commits successfully to PubPartner, data
+    is readable on the replica side (`test_commit_reaches_pubpartner_and_is_readable_there`).
+    This is not theoretical; it's a shipped reference.
+  - **Integration status:** The thin-adapter wiring between the UI and backend
+    (2i-backend at Breaking-Dawn, or the federation service in the reference)
+    is demonstrated and repeatable. The UI's chat stub needs to be replaced
+    with the proven handshake pattern from the reference.
   - **Voice I/O status:** Speech synthesis (read-aloud) is wired via
     browser's `SpeechSynthesisUtterance` API with speed control (1–5 scale).
     Speech recognition (dictation) from the original prototype was not ported
