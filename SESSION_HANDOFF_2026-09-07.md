@@ -289,11 +289,15 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
 ## 5.5. Critical Missing Features (Known Gaps Across All Three PubPartner Implementations)
 
 These are NOT bugs; they are features the user specified in §1 that are not
-yet implemented anywhere:
+yet implemented everywhere:
 
-1. **Offline fallback** — User requirement (§1): "work with local LLM when
-   internet fails." None of the three PubPartner implementations (§6 matrix)
-   currently support this. Fallback logic needs to be built into whichever
+1. **Offline fallback (durable)** — User requirement (§1): "work with local LLM when
+   internet fails." Breaking-Dawn's 2i-backend has a partial implementation:
+   `queued-locally` fallback when PubPartner is unreachable (allows queuing
+   messages locally). This queue is in-memory only — it dies with the process.
+   For this to be a real offline feature, it needs durable local spool/queue.
+   The other two implementations (Horizon and NowCurtsey) have no offline
+   fallback at all. Durable fallback logic needs to be built into whichever
    implementation becomes the shared core.
 
 2. **LLM-provider neutralizer wiring** — `provider_neutralizer.py` exists

@@ -132,11 +132,13 @@ pip install -e .
 python -m pytest tests/ -v
 ```
 
-**Expected: all pre-existing 76 tests still pass, PLUS the federation
-tests (14 in the reference's own count) now also pass, for a new total
-around 90.** If ANY pre-existing test now fails, you introduced a real
-collision — stop and diagnose before continuing; do not delete or skip the
-failing test to make the number look right.
+**Expected outcome (untested hypothesis):** all pre-existing 76 tests still pass,
+PLUS the federation tests (14 in the reference's own count) now also pass, for
+a new total around 90. **This is an expectation based on confirmed clean filename
+merges, but adding new dependencies could cause unexpected breakage.** Run the
+tests and report what you actually find. If ANY pre-existing test now fails,
+you introduced a real collision — stop and diagnose before continuing; do not
+delete or skip the failing test to make the number look right.
 
 Commit this as its own commit before doing anything else:
 ```bash
@@ -156,6 +158,29 @@ git push -u origin main
 
 **Definition of done for this step:** `python -m pytest tests/ -v` shows
 zero failures, and both the old test files and `tests/federation/*.py` ran.
+
+---
+
+## 2b. UNRESOLVED: Breaking-Dawn's 11 updated files (PEQ, virtual camera, media)
+
+**Status:** A prior session identified 11 files in Breaking-Dawn's `pubcast/`
+tree that have been updated since the reference snapshot was packaged
+(2026-08-16). These files touch features not in the snapshot:
+- PEQ (probabilistic emotional-intelligence engine) enhancements
+- Virtual camera bus (for multimodal I/O)
+- Media intake (audio/video handling)
+
+**Decision pending:** Whether these 11 files should be:
+1. **Merged into the Horizon-based shared core** as part of step 2 (enriching
+   the federation module with the latest code), or
+2. **Tracked separately in Breaking-Dawn**, treated as repo-specific features
+   that Horizon doesn't inherit yet.
+
+**This task's stance:** The current reference snapshot (from 2026-08-16) is
+your baseline for the merge in §2. If you want to include Breaking-Dawn's
+latest code, ask the user first — do not guess whether these changes should
+come into Horizon. The task list in §4 below assumes only the reference snapshot
+is merged; if the user asks for more from Breaking-Dawn, that's a separate decision.
 
 ---
 
