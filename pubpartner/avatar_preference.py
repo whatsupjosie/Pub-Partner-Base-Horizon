@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Optional, Tuple
 
-from .companion_mode import AvatarTier
+from .companion_mode import AvatarTier, CapabilitySet, CompanionMode
 
 # PHOTOREAL degrades to STYLIZED degrades to STILL. STILL has no further
 # fallback — it's a static image, there's nothing below it.
@@ -134,3 +134,38 @@ def resolve_avatar(
     # Unreachable in practice: STILL always resolves via base_thumbnail,
     # which __post_init__ guarantees exists and can_run defaults to True.
     raise RuntimeError("no runnable avatar tier found, including the guaranteed still thumbnail")
+
+
+def link_aware_can_run(
+    capabilities: CapabilitySet,
+    *,
+    bake_reachable: Callable[[], bool] = lambda: True,
+) -> Callable[[AvatarTier], bool]:
+    """A `can_run` predicate for resolve_avatar() that reflects how PHOTOREAL
+    avatars actually get produced: server-side voxel baking (see
+    reference/avatar_foundry/), never on-device compute.
+
+    - STILL: always runnable, it's a static image.
+    - STYLIZED: runnable on both Base and Horizon — this is each mode's own
+      lighter rendering tier, not something that needs a bake service.
+    - PHOTOREAL: runnable on Base always (it *is* the bake service host).
+      On Horizon, only when linked to a reachable Base/bake service AND that
+      service reports a finished bake is actually available right now —
+      never "can this phone's hardware do the sculpt," because it can't and
+      was never meant to.
+
+    `bake_reachable` is a caller-supplied check for "is a finished bake
+    actually downloadable right now" (e.g. a federation query against the
+    linked Base) — this function does not perform that query itself, it
+    only decides when the question is even worth asking.
+    """
+
+    def can_run(tier: AvatarTier) -> bool:
+        if tier is AvatarTier.STILL or tier is AvatarTier.STYLIZED:
+            return True
+        # tier is PHOTOREAL
+        if capabilities.mode is CompanionMode.BASE:
+            return True
+        return capabilities.linked and bake_reachable()
+
+    return can_run

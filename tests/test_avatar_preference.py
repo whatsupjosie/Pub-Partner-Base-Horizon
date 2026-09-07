@@ -3,9 +3,10 @@ import pytest
 from pubpartner.avatar_preference import (
     AvatarAsset,
     AvatarPreferences,
+    link_aware_can_run,
     resolve_avatar,
 )
-from pubpartner.companion_mode import AvatarTier
+from pubpartner.companion_mode import AvatarTier, resolve_capabilities, CompanionMode
 
 
 def make_thumbnail():
@@ -106,3 +107,53 @@ def test_base_thumbnail_must_be_still_tier():
         AvatarPreferences(
             base_thumbnail=AvatarAsset(tier=AvatarTier.STYLIZED, asset_ref="oops.glb")
         )
+
+
+def photoreal_prefs():
+    return AvatarPreferences(
+        base_thumbnail=make_thumbnail(),
+        default_tier=AvatarTier.PHOTOREAL,
+        assets=(
+            AvatarAsset(tier=AvatarTier.PHOTOREAL, asset_ref="photoreal.glb"),
+            AvatarAsset(tier=AvatarTier.STYLIZED, asset_ref="stylized.glb"),
+        ),
+    )
+
+
+def test_base_can_always_run_photoreal():
+    caps = resolve_capabilities(CompanionMode.BASE)
+    result = resolve_avatar(photoreal_prefs(), can_run=link_aware_can_run(caps))
+    assert result.tier_used is AvatarTier.PHOTOREAL
+    assert result.degraded is False
+
+
+def test_horizon_unlinked_cannot_run_photoreal_degrades_to_stylized():
+    caps = resolve_capabilities(CompanionMode.HORIZON, linked=False)
+    result = resolve_avatar(photoreal_prefs(), can_run=link_aware_can_run(caps))
+    assert result.tier_used is AvatarTier.STYLIZED
+    assert result.degraded is True
+    assert result.notify_user is True
+
+
+def test_horizon_linked_with_reachable_bake_can_run_photoreal():
+    caps = resolve_capabilities(CompanionMode.HORIZON, linked=True)
+    can_run = link_aware_can_run(caps, bake_reachable=lambda: True)
+    result = resolve_avatar(photoreal_prefs(), can_run=can_run)
+    assert result.tier_used is AvatarTier.PHOTOREAL
+    assert result.degraded is False
+
+
+def test_horizon_linked_but_bake_not_yet_reachable_degrades():
+    caps = resolve_capabilities(CompanionMode.HORIZON, linked=True)
+    can_run = link_aware_can_run(caps, bake_reachable=lambda: False)
+    result = resolve_avatar(photoreal_prefs(), can_run=can_run)
+    assert result.tier_used is AvatarTier.STYLIZED
+    assert result.degraded is True
+
+
+def test_stylized_and_still_always_runnable_regardless_of_link():
+    for linked in (True, False):
+        caps = resolve_capabilities(CompanionMode.HORIZON, linked=linked)
+        can_run = link_aware_can_run(caps, bake_reachable=lambda: False)
+        assert can_run(AvatarTier.STYLIZED) is True
+        assert can_run(AvatarTier.STILL) is True

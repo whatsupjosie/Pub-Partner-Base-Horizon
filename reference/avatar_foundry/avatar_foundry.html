@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PubCast — Avatar Foundry</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --void: #020408;
+  --deep: #060d18;
+  --panel: #0a1628;
+  --border: #1a3a5c;
+  --grid: #0d2035;
+  --plasma: #00d4ff;
+  --plasma-dim: rgba(0,212,255,0.15);
+  --plasma-glow: rgba(0,212,255,0.4);
+  --gold: #ffc940;
+  --gold-dim: rgba(255,201,64,0.12);
+  --gold-glow: rgba(255,201,64,0.5);
+  --forge: #ff6b1a;
+  --forge-dim: rgba(255,107,26,0.12);
+  --success: #00ff88;
+  --warn: #ffb800;
+  --text: #c8e0f4;
+  --muted: #3a6080;
+  --bright: #e8f4ff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; width: 100%;
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  overflow: hidden;
+}
+
+/* ── GRID FLOOR ── */
+.grid-floor {
+  position: fixed; inset: 0;
+  background:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  perspective: 600px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.grid-floor::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 60%;
+  background:
+    linear-gradient(rgba(0,212,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.06) 1px, transparent 1px);
+  background-size: 60px 60px;
+  transform: rotateX(60deg);
+  transform-origin: bottom center;
+}
+
+/* ── AMBIENT ATMOSPHERE ── */
+.atmo {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 100%, rgba(0,100,180,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 20% 50%, rgba(0,212,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 50%, rgba(255,107,26,0.03) 0%, transparent 60%);
+}
+
+/* ── SCANLINE ── */
+.scanline {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--plasma), transparent);
+  opacity: 0.4;
+  animation: scan 4s linear infinite;
+  pointer-events: none; z-index: 100;
+}
+@keyframes scan { 0% { top: 0; } 100% { top: 100vh; } }
+
+/* ── MAIN SHELL ── */
+.shell {
+  position: relative; z-index: 1;
+  width: 100%; height: 100vh;
+  display: grid;
+  grid-template-rows: 52px 1fr;
+  grid-template-columns: 1fr;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(6,13,24,0.9);
+  backdrop-filter: blur(12px);
+}
+.topbar-logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .9rem; font-weight: 700;
+  color: var(--plasma);
+  letter-spacing: .15em;
+  text-shadow: 0 0 20px var(--plasma-glow);
+}
+.topbar-logo span { color: var(--gold); }
+.topbar-status {
+  display: flex; gap: 24px; align-items: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem; color: var(--muted);
+}
+.status-dot {
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+  margin-right: 6px;
+}
+@keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:.3; } }
+
+/* ── STAGE ── */
+.stage {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  overflow: hidden;
+}
+
+/* ── FOUNDRY FLOOR (left) ── */
+.foundry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  gap: 0;
+}
+
+/* ── PLATFORM ── */
+.platform-wrap {
+  position: relative;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.platform {
+  width: 280px; height: 28px;
+  position: relative;
+  cursor: pointer;
+  transition: transform .3s;
+}
+.platform:hover { transform: translateY(-2px); }
+
+.platform-top {
+  width: 100%; height: 14px;
+  background: linear-gradient(180deg, #1a4a6e 0%, #0d2d45 100%);
+  border: 1px solid var(--plasma);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  box-shadow: 0 0 20px var(--plasma-glow), inset 0 1px 0 rgba(0,212,255,0.3);
+}
+.platform-top::before {
+  content: '';
+  position: absolute; inset: 2px;
+  background: repeating-linear-gradient(90deg,
+    rgba(0,212,255,0.06) 0px, rgba(0,212,255,0.06) 1px,
+    transparent 1px, transparent 20px);
+  border-radius: 2px;
+}
+.platform-top::after {
+  content: '';
+  position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+  width: 40px; height: 2px;
+  background: var(--plasma);
+  border-radius: 1px;
+  box-shadow: 0 0 8px var(--plasma);
+}
+
+.platform-side {
+  width: 100%; height: 14px;
+  background: linear-gradient(180deg, #0a1f30 0%, #050e18 100%);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+}
+
+/* Corner accents */
+.platform-top .corner {
+  position: absolute; width: 8px; height: 8px;
+  border-color: var(--plasma); border-style: solid;
+}
+.platform-top .corner.tl { top: 1px; left: 1px; border-width: 1px 0 0 1px; }
+.platform-top .corner.tr { top: 1px; right: 1px; border-width: 1px 1px 0 0; }
+.platform-top .corner.bl { bottom: 1px; left: 1px; border-width: 0 0 1px 1px; }
+.platform-top .corner.br { bottom: 1px; right: 1px; border-width: 0 1px 1px 0; }
+
+/* Vertical beams below platform */
+.beams {
+  display: flex; gap: 60px;
+  height: 60px;
+  position: relative;
+}
+.beam {
+  width: 2px; height: 100%;
+  background: linear-gradient(180deg, var(--plasma) 0%, transparent 100%);
+  opacity: 0.3;
+}
+.beam::after {
+  content: '';
+  position: absolute; left: -1px; top: 0;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--plasma);
+  box-shadow: 0 0 6px var(--plasma);
+}
+
+/* Glow ring under platform */
+.platform-glow {
+  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+  width: 280px; height: 8px;
+  background: radial-gradient(ellipse, var(--plasma-glow) 0%, transparent 70%);
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe { 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+/* ── SKELETON ON PLATFORM ── */
+.skeleton-wrap {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 0;
+}
+
+.skeleton-svg {
+  width: 120px; height: 220px;
+  filter: drop-shadow(0 0 8px var(--plasma-glow));
+  animation: float 4s ease-in-out infinite;
+  cursor: pointer;
+  transition: filter .3s;
+}
+.skeleton-svg:hover {
+  filter: drop-shadow(0 0 16px var(--plasma)) drop-shadow(0 0 32px var(--plasma-glow));
+}
+@keyframes float {
+  0%,100%{ transform: translateY(0); }
+  50%{ transform: translateY(-8px); }
+}
+
+/* Skeleton labels */
+.rig-label {
+  position: absolute;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .6rem; color: var(--plasma);
+  pointer-events: none; white-space: nowrap;
+  opacity: 0; transition: opacity .3s;
+}
+.skeleton-wrap:hover .rig-label { opacity: 1; }
+
+/* Step instruction */
+.step-hint {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem; color: var(--muted);
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-top: 8px;
+  animation: blink-hint 2s ease-in-out infinite;
+}
+@keyframes blink-hint { 0%,100%{opacity:.4;} 50%{opacity:.9;} }
+
+/* ── FOUNDRY LABEL ── */
+.foundry-label {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  font-family: 'Orbitron', monospace; font-size: .65rem;
+  color: var(--muted); letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+/* ── PANEL (right) ── */
+.panel {
+  border-left: 1px solid var(--border);
+  background: rgba(6,13,24,0.95);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+/* Panel tabs */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1; padding: 14px 8px;
+  font-family: 'Rajdhani', sans-serif; font-size: .82rem; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); background: none; border: none; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+}
+.tab.active { color: var(--plasma); border-bottom-color: var(--plasma); }
+.tab:hover:not(.active) { color: var(--text); }
+
+/* Panel sections */
+.panel-body {
+  flex: 1; overflow-y: auto; padding: 20px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.panel-section { display: none; flex-direction: column; gap: 20px; }
+.panel-section.active { display: flex; }
+
+/* Section header */
+.sec-head {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .65rem; color: var(--muted);
+  letter-spacing: .15em; text-transform: uppercase;
+  border-bottom: 1px solid var(--grid);
+  padding-bottom: 6px;
+}
+
+/* ── UPLOAD ZONES ── */
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.upload-slot {
+  position: relative; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--panel);
+  aspect-ratio: 1; cursor: pointer;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  transition: border-color .2s, background .2s;
+  overflow: hidden;
+}
+.upload-slot:hover { border-color: var(--plasma); background: var(--plasma-dim); }
+.upload-slot.has-photo { border-color: var(--success); }
+.upload-slot.dragging { border-color: var(--gold); background: var(--gold-dim); }
+
+.upload-slot img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  border-radius: 5px; opacity: .8;
+}
+.upload-slot .slot-label {
+  position: relative; z-index: 1;
+  font-size: .68rem; color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: .08em; text-align: center;
+  background: rgba(6,13,24,0.7);
+  padding: 2px 6px; border-radius: 3px;
+}
+.upload-slot .slot-icon { font-size: 1.4rem; }
+.upload-slot.has-photo .slot-icon { display: none; }
+
+/* Hidden file inputs */
+.upload-slot input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+
+/* Full-width face slot */
+.upload-slot.face-slot {
+  grid-column: 1 / -1;
+  aspect-ratio: 16/7;
+}
+
+/* ── QUALITY ── */
+.quality-row { display: flex; gap: 6px; }
+.quality-btn {
+  flex: 1; padding: 8px 4px; border-radius: 5px;
+  border: 1px solid var(--border); background: none;
+  font-family: 'Rajdhani', sans-serif; font-size: .78rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: all .2s;
+  letter-spacing: .05em;
+}
+.quality-btn.active {
+  border-color: var(--plasma); color: var(--plasma);
+  background: var(--plasma-dim);
+  box-shadow: 0 0 10px var(--plasma-dim);
+}
+
+/* ── FACE MODE ── */
+.face-mode-row { display: flex; flex-direction: column; gap: 8px; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-label { font-size: .82rem; color: var(--text); }
+.toggle-sublabel { font-size: .72rem; color: var(--muted); }
+
+.toggle {
+  width: 40px; height: 22px; border-radius: 11px;
+  background: var(--border); border: none; cursor: pointer;
+  position: relative; transition: background .2s;
+}
+.toggle.on { background: var(--plasma); box-shadow: 0 0 10px var(--plasma-dim); }
+.toggle::after {
+  content: '';
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; transition: left .2s;
+}
+.toggle.on::after { left: 21px; }
+
+/* ── FIELD ── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: .78rem; color: var(--muted); letter-spacing: .05em; }
+.field input, .field select {
+  padding: 8px 10px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--panel);
+  color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: .88rem;
+}
+.field input:focus, .field select:focus {
+  outline: none; border-color: var(--plasma);
+  box-shadow: 0 0 8px var(--plasma-dim);
+}
+
+/* ── BAKE BUTTON ── */
+.bake-btn {
+  padding: 14px; border-radius: 6px; border: none; cursor: pointer;
+  font-family: 'Orbitron', sans-serif; font-size: .8rem; font-weight: 700;
+  letter-spacing: .15em; text-transform: uppercase;
+  background: linear-gradient(135deg, #0a3a5a, #0d2d45);
+  color: var(--plasma);
+  border: 1px solid var(--plasma);
+  box-shadow: 0 0 20px var(--plasma-dim), inset 0 1px 0 rgba(0,212,255,0.1);
+  transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.bake-btn:hover {
+  background: linear-gradient(135deg, #0d4a70, #0f3a58);
+  box-shadow: 0 0 30px var(--plasma-glow);
+  transform: translateY(-1px);
+}
+.bake-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+.bake-btn .btn-shimmer {
+  position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.15), transparent);
+  animation: shimmer 3s infinite;
+}
+@keyframes shimmer { 0%{left:-100%;} 100%{left:200%;} }
+
+/* ── PROGRESS ── */
+.progress-wrap {
+  display: none; flex-direction: column; gap: 8px;
+}
+.progress-wrap.visible { display: flex; }
+.progress-bar-track {
+  width: 100%; height: 4px; background: var(--grid);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--plasma), var(--gold));
+  border-radius: 2px;
+  transition: width .3s ease;
+  box-shadow: 0 0 8px var(--plasma);
+}
+.progress-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .68rem; color: var(--plasma);
+  display: flex; justify-content: space-between;
+}
+
+/* ── STATS ── */
+.stats-grid {
+  display: none; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.stats-grid.visible { display: grid; }
+.stat {
+  padding: 10px 8px; border-radius: 5px;
+  background: var(--panel); border: 1px solid var(--border);
+  text-align: center;
+}
+.stat-val {
+  font-family: 'Orbitron', sans-serif; font-size: .85rem;
+  color: var(--gold); display: block; margin-bottom: 2px;
+}
+.stat-key {
+  font-family: 'Share Tech Mono', monospace; font-size: .6rem;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+}
+
+/* ── LOG ── */
+.forge-log {
+  font-family: 'Share Tech Mono', monospace; font-size: .68rem;
+  color: var(--muted); line-height: 1.8;
+  max-height: 120px; overflow-y: auto;
+  background: #030810; border: 1px solid var(--grid);
+  border-radius: 4px; padding: 10px;
+}
+.forge-log .log-line { display: block; }
+.forge-log .log-ok { color: var(--success); }
+.forge-log .log-warn { color: var(--warn); }
+.forge-log .log-active { color: var(--plasma); }
+
+/* ── PALETTE ── */
+.swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.swatch {
+  width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: all .15s;
+}
+.swatch:hover, .swatch.active {
+  border-color: white; transform: scale(1.2);
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ── MOOD ── */
+.mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.mood-btn {
+  padding: 7px 6px; border-radius: 4px;
+  border: 1px solid var(--border); background: none;
+  font-family: 'Rajdhani', sans-serif; font-size: .8rem; font-weight: 600;
+  color: var(--muted); cursor: pointer; transition: all .2s; letter-spacing: .03em;
+}
+.mood-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+/* ── PANEL FOOTER ── */
+.panel-footer {
+  padding: 16px 20px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.save-btn {
+  flex: 1; padding: 10px; border-radius: 5px; border: 1px solid var(--gold);
+  background: var(--gold-dim); color: var(--gold);
+  font-family: 'Rajdhani', sans-serif; font-size: .88rem; font-weight: 700;
+  cursor: pointer; letter-spacing: .1em; transition: all .2s;
+}
+.save-btn:hover { background: rgba(255,201,64,0.2); box-shadow: 0 0 16px var(--gold-glow); }
+.save-feedback { font-family: 'Share Tech Mono', monospace; font-size: .7rem; color: var(--success); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── FACE DETAIL BADGE ── */
+.detail-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(255,107,26,0.12); border: 1px solid rgba(255,107,26,0.4);
+  font-family: 'Share Tech Mono', monospace; font-size: .63rem;
+  color: var(--forge); letter-spacing: .08em;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+  background: rgba(6,13,24,0.95); border: 1px solid var(--plasma);
+  padding: 10px 20px; border-radius: 6px;
+  font-family: 'Share Tech Mono', monospace; font-size: .75rem;
+  color: var(--plasma); box-shadow: 0 0 20px var(--plasma-dim);
+  transition: transform .3s; z-index: 999;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+</style>
+</head>
+<body>
+
+<div class="grid-floor"></div>
+<div class="atmo"></div>
+<div class="scanline"></div>
+
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-logo">PUBCAST <span>AVATAR FOUNDRY</span></div>
+    <div class="topbar-status">
+      <span><span class="status-dot"></span>ENGINE LINK</span>
+      <span id="clock" style="font-size:.68rem;"></span>
+      <span>v2.7 / ORBITAL</span>
+    </div>
+  </header>
+
+  <div class="stage">
+
+    <!-- LEFT: FOUNDRY FLOOR -->
+    <div class="foundry">
+      <div class="platform-wrap">
+
+        <!-- Skeleton -->
+        <div class="skeleton-wrap" id="skeleton-wrap" onclick="activateFoundry()">
+          <!-- Rig labels -->
+          <span class="rig-label" style="top:10px;right:-60px;">CRANIAL</span>
+          <span class="rig-label" style="top:60px;right:-55px;">THORAX</span>
+          <span class="rig-label" style="top:100px;left:-55px;">L.ARM</span>
+          <span class="rig-label" style="top:100px;right:-50px;">R.ARM</span>
+          <span class="rig-label" style="top:150px;left:-50px;">L.LEG</span>
+          <span class="rig-label" style="top:150px;right:-45px;">R.LEG</span>
+
+          <!-- SVG Skeleton -->
+          <svg class="skeleton-svg" viewBox="0 0 80 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Skull -->
+            <ellipse cx="40" cy="14" rx="12" ry="13" stroke="#00d4ff" stroke-width="1.5" fill="rgba(0,212,255,0.05)"/>
+            <!-- Jaw -->
+            <path d="M30 20 Q40 28 50 20" stroke="#00d4ff" stroke-width="1" fill="none"/>
+            <!-- Eye sockets -->
+            <ellipse cx="35" cy="12" rx="3" ry="2.5" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <ellipse cx="45" cy="12" rx="3" ry="2.5" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <!-- Spine -->
+            <line x1="40" y1="27" x2="40" y2="90" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="4,2"/>
+            <!-- Ribs -->
+            <path d="M40 38 Q28 44 26 50 Q28 54 40 52" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.04)" opacity=".8"/>
+            <path d="M40 38 Q52 44 54 50 Q52 54 40 52" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.04)" opacity=".8"/>
+            <path d="M40 45 Q27 50 25 56 Q27 60 40 58" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".5"/>
+            <path d="M40 45 Q53 50 55 56 Q53 60 40 58" stroke="#00d4ff" stroke-width=".8" fill="none" opacity=".5"/>
+            <!-- Clavicles -->
+            <line x1="40" y1="30" x2="22" y2="38" stroke="#00d4ff" stroke-width="1.2"/>
+            <line x1="40" y1="30" x2="58" y2="38" stroke="#00d4ff" stroke-width="1.2"/>
+            <!-- Left arm -->
+            <line x1="22" y1="38" x2="14" y2="62" stroke="#00d4ff" stroke-width="1.2"/>
+            <circle cx="14" cy="62" r="2.5" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <line x1="14" y1="64" x2="8" y2="82" stroke="#00d4ff" stroke-width="1.2"/>
+            <!-- Right arm -->
+            <line x1="58" y1="38" x2="66" y2="62" stroke="#00d4ff" stroke-width="1.2"/>
+            <circle cx="66" cy="62" r="2.5" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <line x1="66" y1="64" x2="72" y2="82" stroke="#00d4ff" stroke-width="1.2"/>
+            <!-- Pelvis -->
+            <path d="M28 90 Q40 96 52 90 L52 100 Q40 108 28 100 Z" stroke="#00d4ff" stroke-width="1.2" fill="rgba(0,212,255,0.05)"/>
+            <!-- Left leg -->
+            <line x1="32" y1="100" x2="28" y2="126" stroke="#00d4ff" stroke-width="1.5"/>
+            <circle cx="28" cy="126" r="3" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <line x1="28" y1="129" x2="26" y2="150" stroke="#00d4ff" stroke-width="1.5"/>
+            <!-- Right leg -->
+            <line x1="48" y1="100" x2="52" y2="126" stroke="#00d4ff" stroke-width="1.5"/>
+            <circle cx="52" cy="126" r="3" stroke="#00d4ff" stroke-width="1" fill="rgba(0,212,255,0.1)"/>
+            <line x1="52" y1="129" x2="54" y2="150" stroke="#00d4ff" stroke-width="1.5"/>
+            <!-- Joint dots -->
+            <circle cx="40" cy="27" r="2" fill="#00d4ff" opacity=".6"/>
+            <circle cx="40" cy="90" r="2" fill="#00d4ff" opacity=".6"/>
+            <circle cx="22" cy="38" r="2" fill="#00d4ff" opacity=".5"/>
+            <circle cx="58" cy="38" r="2" fill="#00d4ff" opacity=".5"/>
+            <circle cx="8" cy="82" r="2" fill="#00d4ff" opacity=".5"/>
+            <circle cx="72" cy="82" r="2" fill="#00d4ff" opacity=".5"/>
+            <circle cx="26" cy="150" r="2" fill="#00d4ff" opacity=".5"/>
+            <circle cx="54" cy="150" r="2" fill="#00d4ff" opacity=".5"/>
+            <!-- Energy nodes (animated) -->
+            <circle cx="40" cy="14" r="14" stroke="#00d4ff" stroke-width=".5" fill="none" opacity=".2">
+              <animate attributeName="r" values="14;17;14" dur="3s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values=".2;0;.2" dur="3s" repeatCount="indefinite"/>
+            </circle>
+          </svg>
+          <div class="step-hint" id="step-hint">STEP ONTO PLATFORM → ENTER FOUNDRY</div>
+        </div>
+
+        <!-- Platform -->
+        <div class="platform-glow"></div>
+        <div class="platform" onclick="activateFoundry()" title="Enter Avatar Foundry">
+          <div class="platform-top">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+          </div>
+          <div class="platform-side"></div>
+        </div>
+        <div class="beams">
+          <div class="beam"></div><div class="beam"></div><div class="beam"></div>
+        </div>
+      </div>
+
+      <div class="foundry-label">CS-1 CAPTURE PLATFORM · MOUNT POINT ALPHA</div>
+    </div>
+
+    <!-- RIGHT: PANEL -->
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('bake',this)">BAKE</button>
+        <button class="tab" onclick="switchTab('identity',this)">IDENTITY</button>
+        <button class="tab" onclick="switchTab('rig',this)">RIG</button>
+      </div>
+
+      <div class="panel-body" id="panel-body">
+
+        <!-- ── BAKE TAB ── -->
+        <div class="panel-section active" id="tab-bake">
+
+          <div class="sec-head">Photo Sources</div>
+
+          <div class="upload-grid">
+            <!-- Face slot (wide) -->
+            <div class="upload-slot face-slot" id="slot-face"
+                 ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'face')">
+              <span class="slot-icon">👤</span>
+              <span class="slot-label">FACE · Primary Source<br/><span style="opacity:.5;font-size:.6rem;">Best: clear, front-facing, good light</span></span>
+              <input type="file" accept="image/*" onchange="fileChosen(event,'face')">
+            </div>
+            <!-- Body slots -->
+            <div class="upload-slot" id="slot-torso"
+                 ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'torso')">
+              <span class="slot-icon">🫁</span>
+              <span class="slot-label">TORSO</span>
+              <input type="file" accept="image/*" onchange="fileChosen(event,'torso')">
+            </div>
+            <div class="upload-slot" id="slot-arms"
+                 ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'arms')">
+              <span class="slot-icon">💪</span>
+              <span class="slot-label">ARMS</span>
+              <input type="file" accept="image/*" onchange="fileChosen(event,'arms')">
+            </div>
+            <div class="upload-slot" id="slot-legs"
+                 ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'legs')">
+              <span class="slot-icon">🦵</span>
+              <span class="slot-label">LEGS</span>
+              <input type="file" accept="image/*" onchange="fileChosen(event,'legs')">
+            </div>
+          </div>
+
+          <div class="sec-head">Voxel Quality</div>
+
+          <div class="quality-row">
+            <button class="quality-btn" onclick="setQuality('SURFACE',this)">SURFACE<br/><span style="font-size:.62rem;opacity:.5;font-family:monospace;">48px · fast</span></button>
+            <button class="quality-btn active" onclick="setQuality('TRACK',this)">TRACK<br/><span style="font-size:.62rem;opacity:.5;font-family:monospace;">64px · bal</span></button>
+            <button class="quality-btn" onclick="setQuality('ORBITAL',this)">ORBITAL<br/><span style="font-size:.62rem;opacity:.5;font-family:monospace;">96px · max</span></button>
+          </div>
+
+          <div class="sec-head">Face Detail</div>
+
+          <div class="face-mode-row">
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Fine Voxel Face</div>
+                <div class="toggle-sublabel">Use high-res voxels for face → bake to single mesh</div>
+              </div>
+              <button class="toggle on" id="fine-face-toggle" onclick="toggleFineFace(this)"></button>
+            </div>
+            <div id="fine-face-detail">
+              <span class="detail-badge">🔥 FACE SCULPTED AT 2× RESOLUTION — MESH-BAKED BEFORE MOUNT</span>
+            </div>
+          </div>
+
+          <div class="sec-head">Forge</div>
+
+          <!-- Progress -->
+          <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-label">
+              <span id="progress-stage">Initializing…</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+          </div>
+
+          <!-- Bake button -->
+          <button class="bake-btn" id="bake-btn" onclick="startBake()">
+            <div class="btn-shimmer"></div>
+            ⬡ INITIATE FORGE SEQUENCE
+          </button>
+
+          <!-- Log -->
+          <div class="forge-log" id="forge-log">
+            <span class="log-line log-warn">FOUNDRY STANDBY — AWAITING PHOTO SOURCE</span>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat"><span class="stat-val" id="sv">—</span><span class="stat-key">voxels</span></div>
+            <div class="stat"><span class="stat-val" id="sg">—</span><span class="stat-key">grit</span></div>
+            <div class="stat"><span class="stat-val" id="sm">—</span><span class="stat-key">mode</span></div>
+          </div>
+
+        </div><!-- /tab-bake -->
+
+        <!-- ── IDENTITY TAB ── -->
+        <div class="panel-section" id="tab-identity">
+          <div class="sec-head">Designation</div>
+          <div class="field">
+            <label>DISPLAY NAME</label>
+            <input type="text" id="display-name" maxlength="32" placeholder="Stage name…"/>
+          </div>
+          <div class="field">
+            <label>BODY FRAME</label>
+            <select id="gender-select">
+              <option value="neutral">Neutral</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="chibi">Chibi / CS-1 Rig</option>
+            </select>
+          </div>
+
+          <div class="sec-head">Glow Signature</div>
+          <div class="swatch-row">
+            <div class="swatch active" data-color="#00d4ff" style="background:#00d4ff" title="Plasma"></div>
+            <div class="swatch" data-color="#ffc940" style="background:#ffc940" title="Gold"></div>
+            <div class="swatch" data-color="#ff4fe2" style="background:#ff4fe2" title="Nova"></div>
+            <div class="swatch" data-color="#00ff88" style="background:#00ff88" title="Mint"></div>
+            <div class="swatch" data-color="#ff6b1a" style="background:#ff6b1a" title="Forge"></div>
+            <div class="swatch" data-color="#c084fc" style="background:#c084fc" title="Violet"></div>
+            <div class="swatch" data-color="#ffffff" style="background:#fff" title="White"></div>
+          </div>
+
+          <div class="sec-head">Mood State</div>
+          <div class="mood-grid">
+            <button class="mood-btn active" onclick="setMood('GROUNDED',this)">Grounded</button>
+            <button class="mood-btn" onclick="setMood('NOIR_GRIT',this)">Noir / Grit</button>
+            <button class="mood-btn" onclick="setMood('NURTURE',this)">Nurture</button>
+            <button class="mood-btn" onclick="setMood('RAW',this)">Raw</button>
+          </div>
+        </div>
+
+        <!-- ── RIG TAB ── -->
+        <div class="panel-section" id="tab-rig">
+          <div class="sec-head">Skeleton Config</div>
+          <div class="field">
+            <label>RIG TYPE</label>
+            <select id="rig-type">
+              <option value="standard">Standard Human</option>
+              <option value="cs1">CS-1 Chibi</option>
+              <option value="animal">Animal / Non-Human</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>ANATOMICAL SCALE</label>
+            <select id="anat-scale">
+              <option value="1.0">1:1 Natural</option>
+              <option value="chibi">Chibi (large head / short limbs)</option>
+              <option value="slim">Slim / Elongated</option>
+            </select>
+          </div>
+
+          <div class="sec-head">Weight Map</div>
+          <div class="toggle-row" style="margin-bottom:8px;">
+            <div>
+              <div class="toggle-label">Auto-Generate Weights</div>
+              <div class="toggle-sublabel">Euclidean falloff from bone center</div>
+            </div>
+            <button class="toggle on" id="weight-toggle"></button>
+          </div>
+
+          <div class="sec-head">Thickness by Part</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--muted);line-height:2;">
+            <div style="display:flex;justify-content:space-between;"><span>HEAD</span><span style="color:var(--plasma)">1.2×</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>TORSO</span><span style="color:var(--plasma)">1.5×</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>ARMS</span><span style="color:var(--plasma)">0.8×</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>LEGS</span><span style="color:var(--plasma)">0.7×</span></div>
+          </div>
+
+          <div class="sec-head">Normal Generation</div>
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">3D Sobel Normals</div>
+              <div class="toggle-sublabel">Enables proper lighting in engine</div>
+            </div>
+            <button class="toggle on" id="normal-toggle"></button>
+          </div>
+          <div class="toggle-row" style="margin-top:8px;">
+            <div>
+              <div class="toggle-label">Ambient Occlusion Bake</div>
+              <div class="toggle-sublabel">Deep shadow in grit creases</div>
+            </div>
+            <button class="toggle on" id="ao-toggle"></button>
+          </div>
+        </div>
+
+      </div><!-- /panel-body -->
+
+      <div class="panel-footer">
+        <button class="save-btn" onclick="saveLook()">✦ SAVE LOOK</button>
+        <span class="save-feedback" id="save-feedback"></span>
+      </div>
+    </div><!-- /panel -->
+
+  </div><!-- /stage -->
+</div><!-- /shell -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────
+const state = {
+  photos: {},     // { face, torso, arms, legs }
+  quality: 'TRACK',
+  fineFace: true,
+  baking: false,
+  baked: false,
+  mood: 'GROUNDED',
+  glowColor: '#00d4ff',
+};
+
+const QUALITY_RES = { SURFACE: 48, TRACK: 64, ORBITAL: 96 };
+
+// ── Clock ─────────────────────────────────────────────────────
+function tickClock() {
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('en-US', {hour12:false});
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Platform click ─────────────────────────────────────────────
+function activateFoundry() {
+  document.getElementById('step-hint').textContent = 'FOUNDRY ACTIVE — UPLOAD PHOTO TO BEGIN';
+  document.querySelector('.skeleton-svg').style.filter =
+    'drop-shadow(0 0 20px #00d4ff) drop-shadow(0 0 40px rgba(0,212,255,0.5))';
+  toast('FOUNDRY ENGAGED — LOAD PHOTOS IN THE PANEL →');
+}
+
+// ── File handling ──────────────────────────────────────────────
+function fileChosen(evt, part) {
+  const file = evt.target.files[0];
+  if (file) loadPhoto(file, part);
+}
+function dragOver(evt, el) {
+  evt.preventDefault();
+  el.classList.add('dragging');
+}
+function dragLeave(el) { el.classList.remove('dragging'); }
+function dropFile(evt, part) {
+  evt.preventDefault();
+  const el = document.getElementById('slot-'+part);
+  el.classList.remove('dragging');
+  const file = evt.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadPhoto(file, part);
+}
+
+function loadPhoto(file, part) {
+  state.photos[part] = file;
+  const slot = document.getElementById('slot-'+part);
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.appendChild(img); }
+    img.src = e.target.result;
+    slot.classList.add('has-photo');
+  };
+  reader.readAsDataURL(file);
+  log(`Photo loaded: ${part.toUpperCase()} (${(file.size/1024).toFixed(0)}KB)`, 'ok');
+  updateBakeBtn();
+}
+
+function updateBakeBtn() {
+  const btn = document.getElementById('bake-btn');
+  btn.disabled = !state.photos.face; // face is mandatory
+}
+
+// ── Quality ────────────────────────────────────────────────────
+function setQuality(q, btn) {
+  state.quality = q;
+  document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Fine face toggle ───────────────────────────────────────────
+function toggleFineFace(btn) {
+  btn.classList.toggle('on');
+  state.fineFace = btn.classList.contains('on');
+  document.getElementById('fine-face-detail').style.opacity = state.fineFace ? '1' : '0.3';
+}
+
+// ── Mood ───────────────────────────────────────────────────────
+function setMood(m, btn) {
+  state.mood = m;
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Swatches ───────────────────────────────────────────────────
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    state.glowColor = sw.dataset.color;
+  });
+});
+
+// ── Bake sequence ──────────────────────────────────────────────
+async function startBake() {
+  if (state.baking || !state.photos.face) return;
+  state.baking = true;
+
+  const btn = document.getElementById('bake-btn');
+  btn.disabled = true;
+  document.getElementById('progress-wrap').classList.add('visible');
+  document.getElementById('stats-grid').classList.remove('visible');
+  clearLog();
+
+  const parts = Object.keys(state.photos);
+  const res = QUALITY_RES[state.quality];
+  const faceRes = state.fineFace ? res * 2 : res;
+
+  const steps = [
+    { label: 'Connecting to Sculptor…', pct: 5 },
+    state.fineFace
+      ? { label: `Fine-voxel face sculpt @ ${faceRes}px…`, pct: 18, fn: () => simulateBakePart('FACE', faceRes, 1.2) }
+      : null,
+    state.fineFace
+      ? { label: 'Mesh-baking face to geometry…', pct: 32, fn: () => sleep(600) }
+      : null,
+    parts.includes('torso')
+      ? { label: `Sculpting TORSO @ ${res}px…`, pct: 48, fn: () => simulateBakePart('TORSO', res, 1.5) }
+      : null,
+    parts.includes('arms')
+      ? { label: `Sculpting ARMS @ ${res}px…`, pct: 62, fn: () => simulateBakePart('ARMS', res, 0.8) }
+      : null,
+    parts.includes('legs')
+      ? { label: `Sculpting LEGS @ ${res}px…`, pct: 74, fn: () => simulateBakePart('LEGS', res, 0.7) }
+      : null,
+    { label: 'Generating weight maps…', pct: 82, fn: () => sleep(400) },
+    { label: 'Baking 3D normals + AO…', pct: 90, fn: () => sleep(500) },
+    { label: 'Sending to Avatar Bridge…', pct: 96, fn: () => uploadToServer() },
+    { label: 'Forge complete.', pct: 100 },
+  ].filter(Boolean);
+
+  for (const step of steps) {
+    setProgress(step.label, step.pct);
+    if (step.fn) await step.fn();
+    await sleep(80);
+  }
+
+  // Done
+  state.baking = false;
+  state.baked = true;
+  btn.disabled = false;
+  btn.textContent = '⬡ RE-FORGE AVATAR';
+
+  const totalVoxels = estimateVoxels(parts, res, faceRes);
+  document.getElementById('sv').textContent = totalVoxels.toLocaleString();
+  document.getElementById('sg').textContent = (Math.random() * 0.4 + 0.5).toFixed(3);
+  document.getElementById('sm').textContent = state.quality;
+  document.getElementById('stats-grid').classList.add('visible');
+
+  log('AVATAR MANIFESTED AT ORBITAL VELOCITY', 'ok');
+  toast('✓ Avatar baked and mounted to skeleton');
+}
+
+// Simulate bake (real bake goes to server)
+async function simulateBakePart(label, res, thick) {
+  await sleep(Math.random() * 300 + 200);
+  log(`${label}: ${res}³ vol · ×${thick} thick · shell-culled`, 'active');
+}
+
+// Real server upload
+async function uploadToServer() {
+  if (!state.photos.face) return;
+  try {
+    const form = new FormData();
+    form.append('file', state.photos.face);
+    form.append('mode', state.quality);
+    const r = await fetch('/api/avatars/me/bake', { method: 'POST', body: form });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.ok && d.bake) {
+        document.getElementById('sv').textContent = d.bake.voxel_count.toLocaleString();
+        document.getElementById('sg').textContent = d.bake.grit_index.toFixed(3);
+        log('Bridge sync: CONFIRMED', 'ok');
+      }
+    }
+  } catch(e) {
+    log('Bridge offline — local bake saved', 'warn');
+  }
+}
+
+function estimateVoxels(parts, res, faceRes) {
+  let v = Math.floor(faceRes * faceRes * faceRes * 0.18); // face shell
+  parts.forEach(p => {
+    if (p !== 'face') v += Math.floor(res * res * res * 0.15);
+  });
+  return v;
+}
+
+// ── Progress ───────────────────────────────────────────────────
+function setProgress(label, pct) {
+  document.getElementById('progress-stage').textContent = label;
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+  log(label, pct === 100 ? 'ok' : 'active');
+}
+
+// ── Log ────────────────────────────────────────────────────────
+function log(msg, type='') {
+  const el = document.getElementById('forge-log');
+  const line = document.createElement('span');
+  line.className = 'log-line' + (type ? ' log-'+type : '');
+  line.textContent = `> ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog() {
+  document.getElementById('forge-log').innerHTML = '';
+}
+
+// ── Save ───────────────────────────────────────────────────────
+async function saveLook() {
+  const payload = {
+    display_name: document.getElementById('display-name')?.value?.trim() || 'New Avatar',
+    gender: document.getElementById('gender-select')?.value || 'neutral',
+    mood: state.mood,
+    primary_color: state.glowColor,
+  };
+  try {
+    const r = await fetch('/api/avatars/me', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const fb = document.getElementById('save-feedback');
+    fb.textContent = r.ok ? '✓ SAVED' : 'SAVE FAILED';
+    setTimeout(() => { fb.textContent = ''; }, 2500);
+  } catch(e) {
+    document.getElementById('save-feedback').textContent = 'OFFLINE';
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Init
+document.getElementById('bake-btn').disabled = true;
+</script>
+</body>
+</html>
