@@ -1,5 +1,6 @@
 """PubPartner — persistent character cartridges for consistent AI personas."""
 
+from .avatar_preference import AvatarAsset, AvatarPreferences, AvatarResolution, resolve_avatar
 from .cartridge import Cartridge, CartridgeValidationError, init_cartridge, load_cartridge
 from .companion_mode import (
     AnimationLevel,
@@ -54,4 +55,8 @@ __all__ = [
     "resolve_capabilities",
     "LinkSession",
     "PeerPresence",
+    "AvatarAsset",
+    "AvatarPreferences",
+    "AvatarResolution",
+    "resolve_avatar",
 ]

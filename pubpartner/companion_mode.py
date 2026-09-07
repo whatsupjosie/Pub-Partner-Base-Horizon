@@ -45,6 +45,12 @@ class CompanionMode(str, Enum):
 class AvatarTier(str, Enum):
     PHOTOREAL = "photoreal"
     STYLIZED = "stylized"
+    # The universal floor: a static image, always assumed runnable. Base's
+    # ceiling is PHOTOREAL and Horizon's is STYLIZED (see resolve_capabilities
+    # below) — STILL isn't either mode's preferred tier, it's what
+    # avatar_preference.resolve_avatar() degrades to when nothing higher on
+    # the ladder can run, or when the user never configured a preference.
+    STILL = "still"
 
 
 class AnimationLevel(str, Enum):
