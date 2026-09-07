@@ -264,22 +264,25 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
   continue honoring that Routine or explicitly cancel/reassign it** —
   don't let it silently orphan.
 - **Task list** (harness TaskCreate/TaskUpdate — re-create in a new session
-  since task state doesn't cross sessions):
-  1. **Quick win: Fix UTF-8 BOM on 20 files in Breaking-Dawn** (`pubcast/`
-     tree) — same bug class as NowCurtsey-Build PR #2, already solved pattern.
-     ~30 min task; clears debt immediately.
-  2. Wire 2i_writers_room_v3.html to 2i-backend (thin adapter task, not a
-     rebuild) — **in_progress**. The UI already exists; the backend already
-     exists; they need to be connected.
-  3. Reconcile the three PubPartner implementations (see §6 comparison
-     matrix) — pick ONE shared core before building collaborative writing or
-     group chat on top of it — pending
-  4. Build multi-avatar group chat / weekly hangout (on the reconciled
-     shared core) — pending
+  since task state doesn't cross sessions). **Follow
+  `BUILD_INSTRUCTIONS_NEXT_SESSION.md` for the execution order and exact
+  steps — this list is now just a status summary, not the plan:**
+  1. ✅ **DONE** — Fix UTF-8 BOM on 20 files in Breaking-Dawn (`pubcast/`
+     tree). Committed `0fc079a` on branch `claude/nowcurtsey-repo-audit-rlsqkc`.
+  2. ⏳ **Wire 2i UI to backend** — spec written, not yet applied to the
+     actual HTML file. See `BUILD_INSTRUCTIONS_NEXT_SESSION.md` §3 for the
+     proven contract and exact replacement code.
+  3. ✅ **DECIDED, not yet executed** — Reconcile the three PubPartner
+     implementations: merge `pubpartner_federation` (from the user's
+     reference snapshot) into this repo's `pubpartner/` as the one shared
+     core. See `BUILD_INSTRUCTIONS_NEXT_SESSION.md` §2 for the exact merge
+     commands and test gate — do NOT re-open this as an open decision.
+  4. Build multi-avatar group chat / weekly hangout (on the merged shared
+     core, after task 3 is executed) — pending
   5. Design standalone vignette scene system — pending
   6. Build interactive vignette props (TV, fireplace, radio) — pending
   7. Port collaborative writing mode + group chat to PubPartner Horizon —
-     pending, after shared-core reconciliation (task 3).
+     pending, after task 3 is executed.
 
 ---
 
@@ -328,14 +331,21 @@ three PubPartner implementations actually has.
 | **LLM-provider normalization** | No | No | No |
 | **Character personality cart** | Via `same_as_studio` sentinel | Via cartridge.py | Via personality routing |
 
-Then decide: merge the sync/concurrency logic from #3 into #2 as the one
-true shared core, or some other reconciliation — but pick ONE foundation
-before building collaborative-writing or group-chat on top of any of them.
+**DECIDED (superseded — do not re-litigate):** merge #3's sync/concurrency
+logic into #2 (this repo, `Pub-Partner-Base-Horizon`) as the one true shared
+core. This decision was made using a reference snapshot the user provided
+(`PubCast_2i_PubPartner_WORKING_20260816.zip`) that proves, with 60 passing
+integration tests, that this exact combination — Horizon-style
+cartridge/memory/prompt-assembly plus federation-style sync/concurrency —
+already works end-to-end with a 2i chat UI.
 
-**After that decision**, resume the build order from §3: shared-core
-collab-writing pacing → shared-core group chat → thin adapters into
-NowCurtsey-Build and Horizon → vignette scenes in PubCast → props → light
-vignette port to Horizon.
+**The actual step-by-step execution plan lives in a separate file:
+`BUILD_INSTRUCTIONS_NEXT_SESSION.md`, in this same repo.** That file is the
+one to follow — exact merge commands, exact dependency changes, exact test
+gates, exact UI wiring code, and a prioritized gap list. Everything in this
+section (§6) is background on how the decision was reached; treat
+`BUILD_INSTRUCTIONS_NEXT_SESSION.md` as authoritative for what to do next,
+and this file as authoritative for why.
 
 ---
 
