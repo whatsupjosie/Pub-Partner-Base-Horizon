@@ -149,13 +149,22 @@ be real-but-undiscovered. Specifics:
   didn't exist anywhere — it doesn't exist *in this repo*, but does
   elsewhere (see below).
 
-### The-Counter-and-2i — mostly unpacked-zip prototypes, no backend wiring
+### The-Counter-and-2i — mostly unpacked-zip prototypes, backend exists
 - `2i_writers_room_v3.html` (in a zip) is a **working UI** for almost
   exactly the "collaborative writing, 1.5 pages then review" feature:
   locked manuscript, active buffer capped at ~450 words (~1-2 pages),
   auto-graduation when the cap is hit, manual Approve button, per-line
   pinning, chapter markers, full save/restore to `.2i` JSON files. **Chat
   is an echo-stub — not wired to any real AI model.**
+  - **CRITICAL CONNECTION:** This UI's chat backend is
+    `Pubcaast-Breaking-Dawn/WORKING_PROGRAM/2i-backend` (16/16 tests pass,
+    verified live). This is NOT a rebuild task — it's a thin adapter wiring
+    the existing UI to the existing backend. Both pieces are real; they need
+    to be connected.
+  - **Voice I/O status:** Speech synthesis (read-aloud) is wired via
+    browser's `SpeechSynthesisUtterance` API with speed control (1–5 scale).
+    Speech recognition (dictation) from the original prototype was not ported
+    to v3 — it's a missing feature if needed.
 - "Counter View" workspace shell = **Foresight UI** (see §4a below) — the
   handoff here (`8-10 HANDOFF_FINAL.md`) calls `foresight_ui_v19.html`
   "latest, use this" — **that exact file does not exist anywhere**, across
@@ -204,6 +213,13 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
   hitting 20 files** — the exact same bug class already found and fixed in
   NowCurtsey-Build's PR #2 (which only had 11 affected files). Not fixed
   here yet.
+- **LLM provider neutralizer/humanizer** — `Horizon/provider_neutralizer.py`
+  (verified in earlier session; NOT re-checked this pass). Handles output
+  normalization across Claude/GPT/Gemini/Ollama, translating "cold neutral
+  reasoning" into the companion's specific personality voice/cadence/vocabulary
+  without changing content/intent. This is the core of the "humanizer" feature
+  from §1. Lives outside of all three PubPartner implementations — shared
+  utility layer.
 - **Foresight the Sprite — confirmed real concept, confirmed NOT built.**
   `FORESIGHT_ENGINEERING_HANDOFF_2026-08-19.md`: *"There is also Foresight
   the Sprite — same name, the system's living presence... Meeting her is
@@ -213,6 +229,13 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
   `FORESIGHT_UI_HANDOFF_2026-08-19.md`) independently confirm it is
   spec-only: *"Status: design direction, not yet built. This document is
   the plan, not a spec of finished work."*
+- **Foresight UI authority unclear.** The-Prime contains `foresight_ui_v17.html`
+  + `v18.html` with supporting Python (`polygon_shape_library.py`,
+  `polygonal_tray_engine.py`, three test files) — comprehensive backend.
+  Breaking-Dawn's `pubcast/static/foresight.html` is smaller (490 vs 1362
+  lines), cleaner, integrated into the running app. Unclear which is
+  canonical or whether they should be merged. Needs clarification in a future
+  session before deciding the vignette/Foresight path.
 - `pubcast/static/foresight.html` — the actual current, integrated
   Foresight/Counter build (titled "Foresight — The Counter"), genuinely
   reachable via the app's `/static` mount in `main.py` (not orphaned).
@@ -238,18 +261,43 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
   don't let it silently orphan.
 - **Task list** (harness TaskCreate/TaskUpdate — re-create in a new session
   since task state doesn't cross sessions):
-  1. Build collaborative writing mode (1.5-page pacing + forced review) —
-     **in_progress; re-scope this now that §4 shows 2i_writers_room_v3.html
-     already has the UI half-built** — don't build from scratch, wire the
-     existing buffer/approve UI to a real backend instead, OR decide if the
-     shared-core approach (§3) supersedes it.
-  2. Build multi-avatar group chat / weekly hangout — pending
-  3. Design standalone vignette scene system — pending
-  4. Build interactive vignette props (TV, fireplace, radio) — pending
-  5. Port collaborative writing mode + group chat to PubPartner Horizon —
-     pending, and its description is now stale — should probably become
-     "reconcile the three PubPartner implementations" (see §6) before this
-     makes sense to schedule.
+  1. **Quick win: Fix UTF-8 BOM on 20 files in Breaking-Dawn** (`pubcast/`
+     tree) — same bug class as NowCurtsey-Build PR #2, already solved pattern.
+     ~30 min task; clears debt immediately.
+  2. Wire 2i_writers_room_v3.html to 2i-backend (thin adapter task, not a
+     rebuild) — **in_progress**. The UI already exists; the backend already
+     exists; they need to be connected.
+  3. Reconcile the three PubPartner implementations (see §6 comparison
+     matrix) — pick ONE shared core before building collaborative writing or
+     group chat on top of it — pending
+  4. Build multi-avatar group chat / weekly hangout (on the reconciled
+     shared core) — pending
+  5. Design standalone vignette scene system — pending
+  6. Build interactive vignette props (TV, fireplace, radio) — pending
+  7. Port collaborative writing mode + group chat to PubPartner Horizon —
+     pending, after shared-core reconciliation (task 3).
+
+---
+
+## 5.5. Critical Missing Features (Known Gaps Across All Three PubPartner Implementations)
+
+These are NOT bugs; they are features the user specified in §1 that are not
+yet implemented anywhere:
+
+1. **Offline fallback** — User requirement (§1): "work with local LLM when
+   internet fails." None of the three PubPartner implementations (§6 matrix)
+   currently support this. Fallback logic needs to be built into whichever
+   implementation becomes the shared core.
+
+2. **LLM-provider neutralizer wiring** — `provider_neutralizer.py` exists
+   (verified), but is NOT currently wired into any of the three implementations.
+   It needs to be integrated into the shared-core pipeline so all three
+   PubPartner code paths normalize output through the humanizer before
+   returning to the app.
+
+3. **Voice I/O (input)** — Speech synthesis (output) is wired in 2i v3.
+   Speech recognition (input/dictation) was in the original prototype but not
+   ported to v3. Missing from all other implementations.
 
 ---
 
@@ -257,14 +305,24 @@ worth a new session reading `SYSTEM_AUDIT_2026-08-19.md` in full.
 
 **Before writing any more feature code**, do the head-to-head comparison
 that was queued when this handoff was requested: compare what each of the
-three PubPartner implementations actually has —
-1. `NowCurtsey-Build/modules/pub_partner_chat.py` (in-PubCast, single
-   character, `same_as_studio` sentinel pattern)
-2. `Pub-Partner-Base-Horizon/pubpartner/` (cartridge + memory + prompt
-   assembly + turn sequencer, no sync/concurrency)
-3. `Pubcaast-Breaking-Dawn/WORKING_PROGRAM/pubpartner/` (`pubpartner_federation`
-   — manuscript commit, offline sync, concurrency/conflict handling, no
-   cartridge/sequencer concept)
+three PubPartner implementations actually has.
+
+### PubPartner Implementations Comparison Matrix
+
+| Feature | pub_partner_chat.py (NowCurtsey) | pubpartner/ (Base-Horizon) | pubpartner_federation (Breaking-Dawn) |
+|---------|---|---|---|
+| **Lines of code** | ~800 | ~1200 | ~600 |
+| **Tests** | 0 | 76/76 pass | 14/14 pass |
+| **Cartridge/portable** | No | Yes (full) | No |
+| **Memory persistence** | No | Yes (memory_store.py) | No |
+| **Prompt assembly** | Basic | Sophisticated (tokenizer + prompt_assembler) | Basic |
+| **Turn sequencing** | No | Yes (sequence_controller.py, debouncing + idle tracking) | No |
+| **Multi-avatar group chat** | No | No | No |
+| **Manuscript sync** | No | No | Yes (bidirectional, offline-capable) |
+| **Concurrency/conflict handling** | No | No | Yes (real conflict detection) |
+| **Voice I/O** | No | No | No |
+| **LLM-provider normalization** | No | No | No |
+| **Character personality cart** | Via `same_as_studio` sentinel | Via cartridge.py | Via personality routing |
 
 Then decide: merge the sync/concurrency logic from #3 into #2 as the one
 true shared core, or some other reconciliation — but pick ONE foundation
